@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
 using UnityStandardAssets.Utility;
 using Random = UnityEngine.Random;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 namespace UnityStandardAssets.Characters.FirstPerson
 {
@@ -42,6 +44,14 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private bool m_Jumping;
         private AudioSource m_AudioSource;
 
+        public Text CoinCollected;
+        public Text Timer;
+        private float coin;
+        public float totalcoins;
+        public float starttime;
+        public int timeRemaining;
+        private float TimerValue;
+
         // Use this for initialization
         private void Start()
         {
@@ -61,6 +71,23 @@ namespace UnityStandardAssets.Characters.FirstPerson
         // Update is called once per frame
         private void Update()
         {
+            // timer
+            starttime -= Time.deltaTime;
+            timeRemaining = Mathf.FloorToInt(starttime % 60);
+            Timer.text = "Timer: " + timeRemaining.ToString();
+
+            // game win/lose condition
+            if (timeRemaining > 0) 
+            {
+                if (coin == totalcoins) 
+                {
+                    SceneManager.LoadScene("GameWin");
+                }
+            }
+            else if (starttime <= 0)
+            {
+                SceneManager.LoadScene("GameLose");
+            }
             RotateView();
             // the jump state needs to read here to make sure it is not missed
             if (!m_Jump)
@@ -254,6 +281,27 @@ namespace UnityStandardAssets.Characters.FirstPerson
                 return;
             }
             body.AddForceAtPosition(m_CharacterController.velocity*0.1f, hit.point, ForceMode.Impulse);
+        }
+
+        // coin collision
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (collision.gameObject.tag == "Coin")
+            {
+                collision.gameObject.GetComponent<ParticleSystem>().Play();
+                coin = coin += 10;
+                Destroy(collision.gameObject,1);
+                CoinCollected.text = "Coins Collected: " + coin;
+            }
+        }
+
+        // water collision
+        private void OnTriggerEnter(Collider other)
+        {
+            if (other.gameObject.tag == "Water")
+            {
+                SceneManager.LoadScene("GameLose");
+            }
         }
     }
 }
